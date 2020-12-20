@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "xrefill",
+  "version": "1.0.0",
+
+  "name": "xrefill",
+  "description": "补充使用中的物品！（refill using item）",
+  "authors": [
+    "doo"
+  ],
+  "contact": {
+    "homepage": "",
+    "sources": ""
+  },
+
+  "license": "CC0-1.0",
+  "icon": "assets/xrefill/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.doo.xrefill.Refill"
+    ],
+    "modmenu": [ "com.doo.xrefill.menu.ModMenu" ]
+  },
+  "mixins": [
+    "xrefill.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.7.4",
+    "fabric": "*",
+    "minecraft": "1.16.x"
+  },
+  "recommends": {
+    "modmenu": "*"
+  },
+  "custom": {
+    "modmenu:clientsideOnly": true
+  }
+}
