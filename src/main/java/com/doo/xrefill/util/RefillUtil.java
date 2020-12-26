@@ -9,24 +9,18 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.ServerTask;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.collection.DefaultedList;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 补充工具
  */
 public class RefillUtil {
-
-    /**
-     * 异步执行器
-     */
-    private static final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
 
     /**
      * 玩家缓存
@@ -63,8 +57,15 @@ public class RefillUtil {
      * @param item 物品
      */
     public static void refill(PlayerEntity player, int hash, Item item) {
+        if (!Refill.option.enable) {
+            return;
+        }
         PlayerEntity serverPlayer = PLAYER_MAP.get(player);
-        if (!Refill.option.enable || serverPlayer == null) {
+        if (serverPlayer == null) {
+            return;
+        }
+        MinecraftServer server = serverPlayer.getServer();
+        if (server == null) {
             return;
         }
         Arrays.stream(EquipmentSlot.values()).filter(e -> serverPlayer.getEquippedStack(e).hashCode() == hash)
@@ -76,14 +77,14 @@ public class RefillUtil {
                         temp = stacks.get(i);
                         if (!temp.isEmpty() && isSameItem(item, temp.getItem())) {
                             // 异步补充
-                            int idx = i;
+                            int idx =  i;
                             ItemStack refill = temp.copy();
-                            executor.schedule(() -> {
+                            server.send(new ServerTask(serverPlayer.age + 100, () -> {
                                 if (serverPlayer.getEquippedStack(e).isEmpty()) {
                                     serverPlayer.equipStack(e, refill);
                                     serverPlayer.equip(idx, ItemStack.EMPTY);
                                 }
-                            }, 200, TimeUnit.MILLISECONDS);
+                            }));
                             return;
                         }
                     }
