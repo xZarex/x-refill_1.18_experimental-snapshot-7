@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "xrefill",
-  "version": "1.0.0",
+  "version": "1.0.1",
 
   "name": "xrefill",
   "description": "补充使用中的物品! (refill using item)",
