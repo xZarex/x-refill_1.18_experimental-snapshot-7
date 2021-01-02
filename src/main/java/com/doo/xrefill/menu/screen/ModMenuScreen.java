@@ -14,15 +14,15 @@ import net.minecraft.text.TranslatableText;
  */
 public class ModMenuScreen extends Screen {
 
-    private static final ModMenuScreen INSTANCE = new ModMenuScreen();
     private static final TranslatableText ENABLE = new TranslatableText("xrefill.menu.option.enable");
     private static final TranslatableText DISABLE = new TranslatableText("xrefill.menu.option.disable");
+
+    private static final ModMenuScreen INSTANCE = new ModMenuScreen();
 
     private Screen pre;
 
     private ModMenuScreen() {
         super(new LiteralText(Refill.ID));
-        init();
     }
 
     @Override

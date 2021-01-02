@@ -9,13 +9,14 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.ServerTask;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.collection.DefaultedList;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 补充工具
@@ -26,6 +27,11 @@ public class RefillUtil {
      * 玩家缓存
      */
     private static final Map<PlayerEntity, ServerPlayerEntity> PLAYER_MAP = new HashMap<>(1);
+
+    /**
+     * 不是同一种物品
+     */
+    private static final int DIFF = 20;
 
     /**
      * 获取服务端当前玩家
@@ -64,49 +70,50 @@ public class RefillUtil {
         if (serverPlayer == null) {
             return;
         }
-        MinecraftServer server = serverPlayer.getServer();
-        if (server == null) {
-            return;
-        }
         Arrays.stream(EquipmentSlot.values()).filter(e -> serverPlayer.getEquippedStack(e).hashCode() == hash)
-                .findAny().ifPresent(e -> {
+                .findAny().ifPresent(e ->
                     // 找出背包中相同物品
-                    DefaultedList<ItemStack> stacks = serverPlayer.inventory.main;
-                    ItemStack temp;
-                    for (int i = 0; i < stacks.size(); i++) {
-                        temp = stacks.get(i);
-                        if (!temp.isEmpty() && isSameItem(item, temp.getItem())) {
-                            // 异步补充
-                            int idx =  i;
-                            ItemStack refill = temp.copy();
-                            server.send(new ServerTask(serverPlayer.age + 100, () -> {
-                                if (serverPlayer.getEquippedStack(e).isEmpty()) {
-                                    serverPlayer.equipStack(e, refill);
-                                    serverPlayer.equip(idx, ItemStack.EMPTY);
+                    serverPlayer.inventory.main.stream()
+                            .filter(i -> !i.isEmpty())
+                            .min(Comparator.comparing(i -> getSortNum(i, item)))
+                            .ifPresent(i -> {
+                                // 如果最小的还是不同，则表示没有
+                                if (getSortNum(i, item) >= DIFF) {
+                                    return;
                                 }
-                            }));
-                            return;
-                        }
-                    }
-                });
+                                // 替换
+                                ForkJoinPool.commonPool().submit(() -> {
+                                    try {
+                                        TimeUnit.MILLISECONDS.sleep(200);
+                                    } catch (Exception ignore) {}
+                                    if (serverPlayer.getEquippedStack(e).isEmpty()) {
+                                        serverPlayer.equipStack(e, i.copy());
+                                        i.setCount(0);
+                                    }
+                                });
+                            })
+                );
     }
 
     /**
      * 是相同的物品
      *
-     * @param item 物品1
+     * @param itemStack 物品1
      * @param item2 物品2
      * @return true or false
      */
-    private static boolean isSameItem(Item item, Item item2) {
-        // 同样的物品 same
-        return item == item2
-                // 同样的物品 class same
-                || item.getClass() == item2.getClass()
-                // 都是食物 food
-                || (item.isFood() && item2.isFood())
-                // 都是建筑块 building block
-                || (item.getGroup() == ItemGroup.BUILDING_BLOCKS && item2.getGroup() == ItemGroup.BUILDING_BLOCKS)
-                ;
+    private static double getSortNum(ItemStack itemStack, Item item2) {
+        int sortNum = DIFF;
+        Item item = itemStack.getItem();
+        if (item == item2) {
+            sortNum = 1;
+        } else if (item.getClass() == item2.getClass()) {
+            sortNum = 2;
+        } else if ((item.isFood() && item2.isFood())) {
+            sortNum = 3;
+        } else if ((item.getGroup() == ItemGroup.BUILDING_BLOCKS && item2.getGroup() == ItemGroup.BUILDING_BLOCKS)) {
+            sortNum = 4;
+        }
+        return sortNum + itemStack.getMaxDamage() / 100000D;
     }
 }

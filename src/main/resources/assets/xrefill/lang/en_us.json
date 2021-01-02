@@ -1,4 +1,4 @@
 {
-    "xrefill.menu.option.enable": "enable",
-    "xrefill.menu.option.disable": "disable"
+    "xrefill.menu.option.enable": "enabled",
+    "xrefill.menu.option.disable": "disabled"
 }
