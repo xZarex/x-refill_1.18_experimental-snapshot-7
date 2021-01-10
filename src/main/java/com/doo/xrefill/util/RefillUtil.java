@@ -59,7 +59,7 @@ public class RefillUtil {
      * 补充
      *
      * @param player 本地玩家
-     * @param hash 物品栈hash
+     * @param hash 物品hash
      * @param item 物品
      */
     public static void refill(PlayerEntity player, int hash, Item item) {
@@ -70,26 +70,27 @@ public class RefillUtil {
         if (serverPlayer == null) {
             return;
         }
+        double[] num = {DIFF};
         Arrays.stream(EquipmentSlot.values()).filter(e -> serverPlayer.getEquippedStack(e).hashCode() == hash)
                 .findAny().ifPresent(e ->
                     // 找出背包中相同物品
                     serverPlayer.inventory.main.stream()
                             .filter(i -> !i.isEmpty())
-                            .min(Comparator.comparing(i -> getSortNum(i, item)))
+                            .min(Comparator.comparing(i -> (num[0] = getSortNum(i, item))))
                             .ifPresent(i -> {
                                 // 如果最小的还是不同，则表示没有
-                                if (getSortNum(i, item) >= DIFF) {
+                                if (num[0] >= DIFF) {
                                     return;
                                 }
                                 // 替换
                                 ForkJoinPool.commonPool().submit(() -> {
                                     try {
                                         TimeUnit.MILLISECONDS.sleep(200);
+                                        if (serverPlayer.getEquippedStack(e).isEmpty()) {
+                                            serverPlayer.equipStack(e, i.copy());
+                                            i.setCount(0);
+                                        }
                                     } catch (Exception ignore) {}
-                                    if (serverPlayer.getEquippedStack(e).isEmpty()) {
-                                        serverPlayer.equipStack(e, i.copy());
-                                        i.setCount(0);
-                                    }
                                 });
                             })
                 );
