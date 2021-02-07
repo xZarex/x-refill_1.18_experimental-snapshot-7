@@ -70,18 +70,13 @@ public class RefillUtil {
         if (serverPlayer == null) {
             return;
         }
-        double[] num = {DIFF};
         Arrays.stream(EquipmentSlot.values()).filter(e -> serverPlayer.getEquippedStack(e).hashCode() == hash)
                 .findAny().ifPresent(e ->
                     // 找出背包中相同物品
                     serverPlayer.inventory.main.stream()
-                            .filter(i -> !i.isEmpty())
-                            .min(Comparator.comparing(i -> (num[0] = getSortNum(i, item))))
+                            .filter(i -> !i.isEmpty() && getSortNum(i, item) < DIFF)
+                            .min(Comparator.comparing(i -> getSortNum(i, item)))
                             .ifPresent(i -> {
-                                // 如果最小的还是不同，则表示没有
-                                if (num[0] >= DIFF) {
-                                    return;
-                                }
                                 // 替换
                                 ForkJoinPool.commonPool().submit(() -> {
                                     try {
