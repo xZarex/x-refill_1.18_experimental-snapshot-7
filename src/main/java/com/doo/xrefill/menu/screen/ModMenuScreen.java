@@ -4,22 +4,26 @@ import com.doo.xrefill.Refill;
 import com.doo.xrefill.config.Config;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ScreenTexts;
+import net.minecraft.client.gui.widget.ButtonListWidget;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.options.BooleanOption;
+import net.minecraft.client.options.Option;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.TranslatableText;
 
 /**
  * mod menu 配置界面
  */
 public class ModMenuScreen extends Screen {
 
-    private static final TranslatableText ENABLE = new TranslatableText("xrefill.menu.option.enable");
-    private static final TranslatableText DISABLE = new TranslatableText("xrefill.menu.option.disable");
+    private static final Option ENABLE = new BooleanOption("x_refill.menu.option.enable",
+            o -> Refill.option.enable, (o, v) -> Refill.option.enable = v);
 
     private static final ModMenuScreen INSTANCE = new ModMenuScreen();
 
     private Screen pre;
+
+    private ButtonListWidget list;
 
     private ModMenuScreen() {
         super(new LiteralText(Refill.ID));
@@ -27,10 +31,11 @@ public class ModMenuScreen extends Screen {
 
     @Override
     protected void init() {
-        // 启用按钮
-        this.addButton(new ButtonWidget(this.width / 2 - 150 / 2, 28, 150, 20,
-                Refill.option.enable ? ENABLE : DISABLE,
-                b -> b.setMessage((Refill.option.clickEnable() ? ENABLE : DISABLE))));
+        Option[] options = {ENABLE};
+        list = new ButtonListWidget(this.client, this.width, this.height, 32, this.height - 32, 25);
+        // 显示基础高度
+        list.addAll(options);
+        this.addChild(list);
         // 返回按钮
         this.addButton(new ButtonWidget(this.width / 2 - 150 / 2, this.height - 28, 150, 20,
                 ScreenTexts.BACK, b -> INSTANCE.close()));
@@ -56,6 +61,8 @@ public class ModMenuScreen extends Screen {
     public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
         // 画背景
         super.renderBackground(matrices);
+        // 画按钮
+        list.render(matrices, mouseX, mouseY, delta);
         // 画其他
         super.render(matrices, mouseX, mouseY, delta);
     }
