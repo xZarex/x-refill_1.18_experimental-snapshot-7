@@ -73,7 +73,7 @@ public class RefillUtil {
         Arrays.stream(EquipmentSlot.values()).filter(e -> serverPlayer.getEquippedStack(e).hashCode() == hash)
                 .findAny().ifPresent(e ->
                     // 找出背包中相同物品
-                    serverPlayer.inventory.main.stream()
+                    serverPlayer.getInventory().main.stream()
                             .filter(i -> !i.isEmpty() && getSortNum(i, item) < DIFF)
                             .min(Comparator.comparing(i -> getSortNum(i, item)))
                             .ifPresent(i -> {
